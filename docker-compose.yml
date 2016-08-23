@@ -1,0 +1,69 @@
+app:
+  build: docker/nginx
+  hostname: werbemittelbersch_nginx
+  links:
+    - phpfpm
+    - db
+    - redis
+    - memcached
+  volumes_from:
+    - appdata
+  environment:
+    VIRTUAL_HOST: wb.docker
+    VIRTUAL_PORT: 80
+
+phpfpm:
+  build: docker/php-fpm
+  hostname: werbemittelbersch_phpfpm
+  links:
+    - db
+    - redis
+    - memcached
+  volumes_from:
+    - appdata
+  environment:
+    M2SETUP_DB_HOST: db
+    M2SETUP_DB_NAME: wb
+    M2SETUP_DB_USER: wb
+    M2SETUP_DB_PASSWORD: wb
+    M2SETUP_BASE_URL: http://wb.docker/
+    M2SETUP_BACKEND_FRONTNAME: admin
+    M2SETUP_ADMIN_FIRSTNAME: Admin
+    M2SETUP_ADMIN_LASTNAME: User
+    M2SETUP_ADMIN_EMAIL: magento-admin@example.com
+    M2SETUP_ADMIN_USER: admin
+    M2SETUP_ADMIN_PASSWORD: admin123
+
+db:
+  image: mariadb:10.0
+  hostname: werbemittelbersch_db
+  ports:
+    - "8001:3306"
+  volumes_from:
+    - dbdata
+  environment:
+    MYSQL_ROOT_PASSWORD: wb
+    MYSQL_DATABASE: wb
+    MYSQL_USER: wb
+    MYSQL_PASSWORD: wb
+
+redis:
+  image: redis
+  expose:
+    - 6379
+
+memcached:
+  image: memcached
+  expose:
+    - 11211
+
+dbdata:
+  image: tianon/true
+  volumes:
+    - /var/lib/mysql
+
+appdata:
+  image: tianon/true
+  volumes:
+    - ./:/var/www
+    - ~/.composer:/root/.composer
